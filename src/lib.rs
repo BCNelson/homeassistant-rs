@@ -2,6 +2,7 @@ use crate::types::*;
 use std::convert::TryFrom;
 use std::sync::{Arc, RwLock, Weak};
 use std::time;
+use serde::{Deserialize, Serialize};
 
 pub mod errors;
 pub mod native_app;
@@ -16,7 +17,14 @@ pub struct HomeAssistantAPI {
     self_reference: Weak<RwLock<Self>>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HomeAssistantAPIConfig {
+    instance_url: String,
+    token: Token,
+    client_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Token {
     Oauth(OAuthToken),
     LongLived(LongLivedToken),
@@ -46,14 +54,14 @@ impl Token {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct OAuthToken {
     token: String,
     token_expiration: std::time::SystemTime,
     refresh_token: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LongLivedToken {
     token: String,
 }
@@ -71,6 +79,28 @@ impl HomeAssistantAPI {
         ret.write().unwrap().self_reference = Arc::downgrade(&ret);
 
         ret
+    }
+
+    pub fn from_config(config: HomeAssistantAPIConfig) -> Arc<RwLock<Self>> {
+        let token = config.token;
+        let ret = Arc::new(RwLock::new(Self {
+            instance_url: config.instance_url,
+            token,
+            client_id: config.client_id,
+            self_reference: Weak::new(),
+        }));
+
+        ret.write().unwrap().self_reference = Arc::downgrade(&ret);
+
+        ret
+    }
+
+    pub fn to_config(self) -> HomeAssistantAPIConfig {
+        HomeAssistantAPIConfig {
+            client_id: self.client_id,
+            instance_url: self.instance_url,
+            token: self.token
+        }
     }
 
     pub fn set_oauth_token(

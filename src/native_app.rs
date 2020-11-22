@@ -54,6 +54,15 @@ impl NativeApp {
         }
     }
 
+    pub fn to_config(self) -> NativeAppConfig {
+        NativeAppConfig {
+            webhook_id: self.webhook_id.clone(),
+            cloudhook_url: self.cloudhook_url.clone(),
+            remote_ui_url: self.remote_ui_url.clone(),
+            secret: self.secret.clone(),
+        }
+    }
+
     pub fn set_webhook_info(
         &mut self,
         webhook_id: String,
