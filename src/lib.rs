@@ -24,6 +24,16 @@ pub struct HomeAssistantAPIConfig {
     client_id: String,
 }
 
+impl From<HomeAssistantAPI> for HomeAssistantAPIConfig {
+    fn from(app: HomeAssistantAPI) -> Self {
+        HomeAssistantAPIConfig {
+            client_id: app.client_id,
+            instance_url: app.instance_url,
+            token: app.token
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Token {
     Oauth(OAuthToken),
@@ -95,14 +105,6 @@ impl HomeAssistantAPI {
         ret
     }
 
-    pub fn to_config(self) -> HomeAssistantAPIConfig {
-        HomeAssistantAPIConfig {
-            client_id: self.client_id,
-            instance_url: self.instance_url,
-            token: self.token
-        }
-    }
-
     pub fn set_oauth_token(
         &mut self,
         access_token: String,
@@ -144,6 +146,16 @@ impl HomeAssistantAPI {
         Ok(())
     }
 
+    pub async fn request_authorization_code(self, uri: String) -> Result<String, errors::Error> {
+        let client = reqwest::Client::new()
+            .get(format!("{}/auth/token", self.instance_url).as_str())
+            .query(&[("client_id", &self.client_id)])
+            .query(&[("redirect_uri", uri)])
+            .build()?;
+
+        Ok(client.url().to_string())
+    }
+
     pub async fn access_token(
         &mut self,
         code: String,
@@ -154,6 +166,7 @@ impl HomeAssistantAPI {
             code,
             client_id,
         };
+        
         let resp = reqwest::Client::new()
             .post(format!("{}/auth/token", self.instance_url).as_str())
             .form(&request)

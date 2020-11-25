@@ -11,6 +11,17 @@ pub struct NativeAppConfig {
     secret: Option<String>,
 }
 
+impl From<NativeApp> for NativeAppConfig {
+    fn from(app: NativeApp) -> Self {
+        NativeAppConfig {
+            webhook_id: app.webhook_id,
+            cloudhook_url: app.cloudhook_url,
+            remote_ui_url: app.remote_ui_url,
+            secret: app.secret,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct NativeApp {
     webhook_id: Option<String>,
@@ -51,15 +62,6 @@ impl NativeApp {
             None => Err(errors::Error::HaApi(String::from(
                 "Weak PTR Upgrade unsececcful",
             ))),
-        }
-    }
-
-    pub fn to_config(self) -> NativeAppConfig {
-        NativeAppConfig {
-            webhook_id: self.webhook_id.clone(),
-            cloudhook_url: self.cloudhook_url.clone(),
-            remote_ui_url: self.remote_ui_url.clone(),
-            secret: self.secret.clone(),
         }
     }
 
